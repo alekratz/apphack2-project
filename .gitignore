@@ -1,0 +1,18 @@
+### Linux ###
+*~
+
+# KDE directory preferences
+.directory
+
+
+### MonoDevelop ###
+#User Specific
+*.userprefs
+*.usertasks
+
+#Mono Project Files
+*.pidb
+*.resources
+test-results/
+transf/bin/
+transf/obj/
