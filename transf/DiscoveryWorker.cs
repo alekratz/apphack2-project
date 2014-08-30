@@ -6,6 +6,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics;
+using transf.Log;
 
 namespace transf
 {
@@ -41,6 +42,7 @@ namespace transf
 			ulong lastBcastDelta = Utils.GetUnixTimestampMs () - lastBcast;
 			if (lastBcastDelta >= BCAST_PERIOD_MS)
 			{
+				Logger.WriteDebug (Logger.GROUP_NET, "Emitting discovery signal");
 				// Create a broadcast packet
 				// starts with the 4-byte magic number and a nickname
 				byte[] packet = new byte[4 + nickname.Length];
@@ -123,21 +125,24 @@ namespace transf
 
 			discoveredNodes = new HashSet<Node> ();
 
+			Logger.WriteInfo (Logger.GROUP_NET, "Starting discovery worker");
 			// Get the local address on the entire network
 			try
 			{
+				Logger.WriteVerbose(Logger.GROUP_NET, "Getting DNS host entry");
 				thisAddr = Dns.GetHostEntry (Dns.GetHostName()).AddressList[0];
-			} 
-			catch (IndexOutOfRangeException ex)
+				Logger.WriteVerbose(Logger.GROUP_NET, "Got network IP address, hello {0}", thisAddr);
+			}
+			catch (IndexOutOfRangeException)
 			{
-				// TODO : log this
-				Console.WriteLine ("Error: failed to start discovery worker thread due to DNS resolve error");
+				Logger.WriteError (Logger.GROUP_NET, "Failed to start discovery worker thread due to DNS resolve error");
 				return;
 			}
 
 			// Create the datagram client
 			try
 			{
+				Logger.WriteVerbose(Logger.GROUP_NET, "Binding datagram socket to port {0}", port);
 				dgramClient = new UdpClient (port)
 				{
 					DontFragment = true,
@@ -149,8 +154,8 @@ namespace transf
 			catch(SocketException ex)
 			{
 				// TODO : log this
-				Console.WriteLine ("Error: failed to start discovery worker thread due to socket error");
-				Console.WriteLine (ex.Message);
+				Logger.WriteError(Logger.GROUP_NET, "Failed to start discovery worker thread due to socket error");
+				Logger.WriteError(Logger.GROUP_NET, ex.Message);
 				return;
 			}
 

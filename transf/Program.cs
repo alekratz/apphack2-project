@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Text;
+using transf.Log;
 
 namespace transf
 {
@@ -27,6 +28,10 @@ namespace transf
 
 		public static void Main (string[] args)
 		{
+			// This should be the first thing that's done
+			Logger.Instance = new Logger (Console.Out);
+			Logger.Instance.LogLevel = LogLevel.Verbose; // up the verbosity
+
 			const int PORT = 44444;
 			string nickname = GetNickname ();
 

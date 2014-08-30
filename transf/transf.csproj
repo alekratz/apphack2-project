@@ -38,6 +38,11 @@
     <Compile Include="DiscoveryWorker.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="Log\Logger.cs" />
+    <Compile Include="Log\LogLevel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Log\" />
+  </ItemGroup>
 </Project>
