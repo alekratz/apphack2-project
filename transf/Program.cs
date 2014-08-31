@@ -34,9 +34,7 @@ namespace transf
 
 			const int PORT = 44444;
 			string nickname = GetNickname ();
-
-			Console.WriteLine ("Started listening for datagrams on port {0}", PORT);
-			Console.WriteLine ("Nickname: {0}", nickname);
+			Logger.WriteDebug (Logger.GROUP_APP, "Using nickname {0}", nickname);
 
 			DiscoveryWorker discWorker = new DiscoveryWorker ();
 			discWorker.Start (PORT, nickname);

@@ -126,6 +126,7 @@ namespace transf
 			discoveredNodes = new HashSet<Node> ();
 
 			Logger.WriteInfo (Logger.GROUP_NET, "Starting discovery worker");
+			//Logger.WriteDebug (Logger.GROUP_NET, "Using nickname {0}", nickname);
 			// Get the local address on the entire network
 			try
 			{
@@ -153,7 +154,6 @@ namespace transf
 			}
 			catch(SocketException ex)
 			{
-				// TODO : log this
 				Logger.WriteError(Logger.GROUP_NET, "Failed to start discovery worker thread due to socket error");
 				Logger.WriteError(Logger.GROUP_NET, ex.Message);
 				return;
@@ -178,7 +178,9 @@ namespace transf
 				if (timeDelta < SLEEP_MS)
 					Thread.Sleep ((int)(SLEEP_MS - timeDelta));
 				else
-					Console.WriteLine ("WARNING: Overload on time delta (DiscoveryWorker)");
+					Logger.WriteWarning (Logger.GROUP_NET,
+						"Overload on discovery worker time delta ({0} ms slower than the {1} ms allotted)",
+						timeDelta, SLEEP_MS);
 			}
 		}
 	}
