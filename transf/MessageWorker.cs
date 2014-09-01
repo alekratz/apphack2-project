@@ -164,6 +164,7 @@ namespace transf
         }
         #endregion
 
+        #region Utility methods
         /// <summary>
         /// Accepts any pending connections to the connectedClients pool.
         /// </summary>
@@ -287,34 +288,56 @@ namespace transf
                 directSendQueue.Clear();
             }
         }
+        #endregion
 
-        protected override void Run(object arg)
+        protected override bool Initialize(params object[] args)
         {
-            Debug.Assert(arg != null, "Arguments for MessageWorker.Start() must not be null");
-            object[] args = (object[])arg;
-            Debug.Assert(args.Length == 1, "1 argument required for DiscoveryWorker.Start(), (int)");
             port = (int)args[0];
 
-            Logger.WriteInfo(Logger.GROUP_NET, "Starting message worker");
-
             // Bind both of the sockets to the port
-            datagramClient = new UdpClient(port)
+            try
             {
-                DontFragment = true,
-                EnableBroadcast = true,
-                //ExclusiveAddressUse = true,
-                MulticastLoopback = false
-            };
+                datagramClient = new UdpClient(port)
+                {
+                    DontFragment = true,
+                    EnableBroadcast = true,
+                    //ExclusiveAddressUse = true,
+                    MulticastLoopback = false
+                };
+            }
+            catch (SocketException ex)
+            {
+                Logger.WriteError(Logger.GROUP_NET, "Could not bind datagram listener to port {0}, exiting", port);
+                Logger.WriteError(Logger.GROUP_NET, ex.Message);
+                return false;
+            }
 
-            directClient = new TcpListener(new IPEndPoint(IPAddress.Loopback, port));
-            directClient.Server.Blocking = false;
-            directClient.Start();
+            try
+            {
+                directClient = new TcpListener(new IPEndPoint(IPAddress.Loopback, port));
+                directClient.Server.Blocking = false;
+                directClient.Start();
+            }
+            catch (SocketException ex)
+            {
+                Logger.WriteError(Logger.GROUP_NET, "Could not bind direct message listener to port {0}, exiting", port);
+                Logger.WriteError(Logger.GROUP_NET, ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        protected override void Run()
+        {
+            Logger.WriteInfo(Logger.GROUP_NET, "Starting message worker");
 
             while(!StopSignal)
             {
                 const int SLEEP_MS = 500;
                 ulong timeStart = TimeUtils.GetUnixTimestampMs();
 
+                // TODO : add PruneConnections() method
                 AcceptConnections();
                 ReceiveMessages();
                 SendMessages();

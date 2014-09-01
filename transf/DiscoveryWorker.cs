@@ -24,18 +24,35 @@ namespace transf
 		/// </summary>
 		public const int BCAST_PERIOD_MS = 1000;
 
-		private HashSet<Node> discoveredNodes;
-		//private UdpClient dgramClient;
-		private IPAddress thisAddr;
+        /// <summary>
+        /// The set of discovered nodes by the discovery worker
+        /// </summary>
+        public HashSet<Node> DiscoveredNodes { get; private set; }
+
+        #region Singleton methods
+        private static DiscoveryWorker instance = null;
+        public static DiscoveryWorker Instance
+        {
+            get
+            {
+                if (instance == null)
+                    instance = new DiscoveryWorker();
+                return instance;
+            }
+        }
+        #endregion
+
+        private IPAddress thisAddr;
 		private int port;
 		private string nickname;
 		private ulong lastBcast;
 
-		public DiscoveryWorker ()
+		private DiscoveryWorker ()
 		{
 		}
 
-		/// <summary>
+        #region Utility methods
+        /// <summary>
 		/// Emits the discovery signal for this worker
 		/// </summary>
 		private void EmitDiscovery()
@@ -90,11 +107,15 @@ namespace transf
 
 				// If it couldn't be added, then it exists in the set already
 				// remove it and add the new updated one
-				if (!discoveredNodes.Add (remoteNode))
-				{
-					discoveredNodes.Remove (remoteNode);
-					discoveredNodes.Add (remoteNode);
-				}
+                if (!DiscoveredNodes.Add(remoteNode))
+                {
+                    DiscoveredNodes.Remove(remoteNode);
+                    DiscoveredNodes.Add(remoteNode);
+                }
+                else
+                {
+                    Logger.WriteInfo(Logger.GROUP_NET, "Discovered new user, {0} at {1}", remoteNickname, address);
+                }
 			}
 		}
 
@@ -104,38 +125,29 @@ namespace transf
 		private void PruneNodes()
 		{
 			List<Node> toRemove = new List<Node> ();
-			foreach (Node node in discoveredNodes)
+			foreach (Node node in DiscoveredNodes)
 			{
 				if (node.HasTimedOut ())
 					toRemove.Add (node);
 			}
 
 			foreach (Node node in toRemove)
-				discoveredNodes.Remove (node);
+				DiscoveredNodes.Remove (node);
 		}
+        #endregion
 
-		/// <summary>
-		/// The logic of the discoveryworker.
-		/// </summary>
-		/// <param name="port">The port to run on</param>
-		/// <param name="nickname">The nickname to emit a discovery signal as</param> 
-		protected override void Run (object arg)
-		{
-			Debug.Assert (arg != null, "Arguments for DiscoveryWorker.Start() must not be null");
-			object[] args = (object[])arg;
-			Debug.Assert (args.Length == 2, "2 arguments required for DiscoveryWorker.Start(), (int, string)");
-			port = (int)args [0];
-			nickname = (string)args [1];
+        protected override bool Initialize(params object[] args)
+        {
+            port = (int)args[0];
+            nickname = (string)args[1];
 
-			discoveredNodes = new HashSet<Node> ();
+            DiscoveredNodes = new HashSet<Node>();
 
-			Logger.WriteInfo (Logger.GROUP_NET, "Starting discovery worker");
-			//Logger.WriteDebug (Logger.GROUP_NET, "Using nickname {0}", nickname);
-			// Get the local address on the entire network
-			try
-			{
-				Logger.WriteVerbose(Logger.GROUP_NET, "Getting DNS host entry");
-                IPAddress[] addressList = Dns.GetHostEntry (Dns.GetHostName()).AddressList;
+            // Get the local address on the entire network
+            try
+            {
+                Logger.WriteVerbose(Logger.GROUP_NET, "Getting DNS host entry");
+                IPAddress[] addressList = Dns.GetHostEntry(Dns.GetHostName()).AddressList;
                 foreach (IPAddress addr in addressList)
                 {
                     // discard IPv6 addresses
@@ -147,16 +159,28 @@ namespace transf
                         break;
                     }
                 }
-				Logger.WriteVerbose(Logger.GROUP_NET, "Got network IP address, hello {0}", thisAddr);
-			}
-			catch (IndexOutOfRangeException)
-			{
-				Logger.WriteError (Logger.GROUP_NET, "Failed to start discovery worker thread due to DNS resolve error");
-				return;
-			}
+                Logger.WriteVerbose(Logger.GROUP_NET, "Got network IP address, hello {0}", thisAddr);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                Logger.WriteError(Logger.GROUP_NET, "Failed to start discovery worker thread due to DNS resolve error");
+                return false;
+            }
 
-			// Reset this so that it will force the emit discovery signal
-			lastBcast = 0;
+            // Reset this so that it will force the emit discovery signal
+            lastBcast = 0;
+
+            return true;
+        }
+
+        /// <summary>
+		/// The logic of the discoveryworker.
+		/// </summary>
+		/// <param name="port">The port to run on</param>
+		/// <param name="nickname">The nickname to emit a discovery signal as</param> 
+		protected override void Run ()
+		{
+			Logger.WriteInfo (Logger.GROUP_NET, "Starting discovery worker");
 
 			while (!StopSignal)
 			{

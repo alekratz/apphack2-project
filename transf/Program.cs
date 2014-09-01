@@ -30,7 +30,7 @@ namespace transf
 		{
 			// This should be the first thing that's done
 			Logger.Instance = new Logger (Console.Out);
-			Logger.Instance.LogLevel = LogLevel.Verbose; // up the verbosity
+			Logger.Instance.LogLevel = LogLevel.Debug; // up the verbosity
 
 			const int PORT = 44444;
 			string nickname = GetNickname ();
@@ -38,9 +38,18 @@ namespace transf
 
             // Start a discovery worker and message worker
             MessageWorker msgWorker = MessageWorker.Instance;
-            msgWorker.Start(PORT);
-			DiscoveryWorker discWorker = new DiscoveryWorker ();
-			discWorker.Start (PORT, nickname);
+            DiscoveryWorker discWorker = DiscoveryWorker.Instance;
+            if (!msgWorker.Start(PORT))
+            {
+                Logger.WriteError(Logger.GROUP_APP, "Couldn't start message worker, exiting");
+                return;
+            }
+            if (!discWorker.Start(PORT, nickname))
+            {
+                Logger.WriteError(Logger.GROUP_APP, "Couldn't start discovery worker, exiting");
+                msgWorker.Stop();
+                return;
+            }
 			discWorker.Join ();
 		}
 	}

@@ -28,7 +28,9 @@ namespace transf
 				return false;
 			workThread = new Thread (Run);
 			StopSignal = false;
-			workThread.Start (args);
+            if (!Initialize(args))
+                return false;
+			workThread.Start ();
 			return true;
 		}
 
@@ -67,7 +69,14 @@ namespace transf
 		/// The abstract run method that does the work under the workerthread.
 		/// </summary>
 		/// <param name="args">Specific arguments for the run method.</param>
-		protected abstract void Run(object arg);
+		protected abstract void Run();
+
+        /// <summary>
+        /// Initializes any resources and returns a success result.
+        /// </summary>
+        /// <param name="args">Any arguments for the worker to initialize itself.</param>
+        /// <returns><c>true</c> if initialization was successful, otherwise <c>false</c>.</returns>
+        protected abstract bool Initialize(params object[] args);
 	}
 }
 
