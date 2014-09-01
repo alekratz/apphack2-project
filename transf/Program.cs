@@ -36,6 +36,9 @@ namespace transf
 			string nickname = GetNickname ();
 			Logger.WriteDebug (Logger.GROUP_APP, "Using nickname {0}", nickname);
 
+            // Start a discovery worker and message worker
+            MessageWorker msgWorker = MessageWorker.Instance;
+            msgWorker.Start(PORT);
 			DiscoveryWorker discWorker = new DiscoveryWorker ();
 			discWorker.Start (PORT, nickname);
 			discWorker.Join ();
