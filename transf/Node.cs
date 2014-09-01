@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using transf.Utils;
 
 namespace transf
 {
@@ -17,7 +18,7 @@ namespace transf
 		/// <returns><c>true</c> if this instance has timed out based on the current Unix time; otherwise, <c>false</c>.</returns>
 		public bool HasTimedOut()
 		{
-			ulong currTimeMs = Utils.GetUnixTimestampMs ();
+			ulong currTimeMs = TimeUtils.GetUnixTimestampMs ();
 			return currTimeMs - LastCheckin > MAX_TIMEOUT;
 		}
 

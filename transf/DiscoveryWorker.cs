@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics;
 using transf.Log;
+using transf.Utils;
 
 namespace transf
 {
@@ -39,7 +40,7 @@ namespace transf
 		/// </summary>
 		private void EmitDiscovery()
 		{
-			ulong lastBcastDelta = Utils.GetUnixTimestampMs () - lastBcast;
+			ulong lastBcastDelta = TimeUtils.GetUnixTimestampMs () - lastBcast;
 			if (lastBcastDelta >= BCAST_PERIOD_MS)
 			{
 				Logger.WriteDebug (Logger.GROUP_NET, "Emitting discovery signal");
@@ -50,7 +51,7 @@ namespace transf
 				Encoding.ASCII.GetBytes (nickname).CopyTo (packet, 4);
 				// Send it to the broadcast address
 				dgramClient.Send (packet, packet.Length, new IPEndPoint (IPAddress.Broadcast, port));
-				lastBcast = Utils.GetUnixTimestampMs ();
+				lastBcast = TimeUtils.GetUnixTimestampMs ();
 			}
 		}
 
@@ -70,8 +71,11 @@ namespace transf
 				uint magic = BitConverter.ToUInt32 (msg, 0);
 				if (magic != MAGIC) // if it's not the magic number, continue
 					continue;
-				if (remoteEndpoint.Address.Equals(thisAddr)) // if it's us, continue
-					continue;
+                if (remoteEndpoint.Address.Equals(thisAddr)) // if it's us, continue
+                {
+                    Logger.WriteVerbose(Logger.GROUP_NET, "Received discovery signal from self");
+                    continue;
+                }
 
 				byte[] noMagicMsg = new byte[msg.Length - 4];
 				Array.Copy (msg, 4, noMagicMsg, 0, noMagicMsg.Length);
@@ -81,7 +85,7 @@ namespace transf
 				{
 					Nickname = remoteNickname,
 					RemoteAddress = remoteEndpoint.Address,
-					LastCheckin = Utils.GetUnixTimestampMs ()
+					LastCheckin = TimeUtils.GetUnixTimestampMs ()
 				};
 
 				// If it couldn't be added, then it exists in the set already
@@ -117,7 +121,7 @@ namespace transf
 		/// <param name="nickname">The nickname to emit a discovery signal as</param> 
 		protected override void Run (object arg)
 		{
-			Debug.Assert (arg != null, "Arguments for DiscoveryWorker() must not be null");
+			Debug.Assert (arg != null, "Arguments for DiscoveryWorker.Start() must not be null");
 			object[] args = (object[])arg;
 			Debug.Assert (args.Length == 2, "2 arguments required for DiscoveryWorker.Start(), (int, string)");
 			port = (int)args [0];
@@ -165,13 +169,13 @@ namespace transf
 			while (!StopSignal)
 			{
 				const int SLEEP_MS = 50;
-				ulong timeStart = Utils.GetUnixTimestampMs ();
+				ulong timeStart = TimeUtils.GetUnixTimestampMs ();
 
 				EmitDiscovery ();
 				CheckMessages ();
 				PruneNodes ();
 
-				ulong timeEnd = Utils.GetUnixTimestampMs ();
+				ulong timeEnd = TimeUtils.GetUnixTimestampMs ();
 				ulong timeDelta = timeEnd - timeStart;
 
 				// Sleep

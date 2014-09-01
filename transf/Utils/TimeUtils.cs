@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace transf
+namespace transf.Utils
 {
-	public static class Utils
+	public static class TimeUtils
 	{
 		/// <summary>
 		/// Gets the current unix timestamp.
