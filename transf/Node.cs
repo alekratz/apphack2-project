@@ -24,8 +24,13 @@ namespace transf
 
 		public override int GetHashCode ()
 		{
-			return Nickname.GetHashCode () + RemoteAddress.GetHashCode ();
+			return Nickname.GetHashCode () ^ RemoteAddress.GetHashCode ();
 		}
+
+        public override bool Equals(object obj)
+        {
+            return obj.GetHashCode() == GetHashCode();
+        }
 	}
 }
 

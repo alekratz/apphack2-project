@@ -111,10 +111,11 @@ namespace transf
                 {
                     DiscoveredNodes.Remove(remoteNode);
                     DiscoveredNodes.Add(remoteNode);
+                    Logger.WriteVerbose(Logger.GROUP_NET, "Refreshing connection with {0}", address);
                 }
                 else
                 {
-                    Logger.WriteInfo(Logger.GROUP_NET, "Discovered new user, {0} at {1}", remoteNickname, address);
+                    Logger.WriteInfo(Logger.GROUP_NET, "Discovered new user, {0} at {1}", remoteNickname, address, address.GetHashCode());
                 }
 			}
 		}
@@ -131,6 +132,8 @@ namespace transf
 					toRemove.Add (node);
 			}
 
+            if(toRemove.Count > 0)
+                Logger.WriteDebug(Logger.GROUP_NET, "Pruning {0} nodes from discovery worker", toRemove.Count);
 			foreach (Node node in toRemove)
 				DiscoveredNodes.Remove (node);
 		}
