@@ -8,9 +8,8 @@ using System.Collections;
 using System.Diagnostics;
 using transf.Log;
 using transf.Utils;
-using transf.Net;
 
-namespace transf
+namespace transf.Net
 {
 	public class DiscoveryWorker : WorkerThread
 	{

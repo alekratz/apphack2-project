@@ -8,9 +8,8 @@ using System.Threading;
 using Nito;
 using transf.Log;
 using transf.Utils;
-using transf.Net;
 
-namespace transf
+namespace transf.Net
 {
     class MessageWorker
         : WorkerThread
@@ -67,6 +66,7 @@ namespace transf
         /// <returns></returns>
         public Message NextMessage(MessageType type = MessageType.Direct, Opcode opcode = Opcode.None, IPAddress from = null)
         {
+            // TODO : LINQ-ify this
             lock (recvQueue)
             {
                 for (int i = 0; i < recvQueue.Count; i++)

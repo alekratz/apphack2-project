@@ -2,7 +2,7 @@
 using System.Net;
 using transf.Utils;
 
-namespace transf
+namespace transf.Net
 {
 	public struct Node
 	{

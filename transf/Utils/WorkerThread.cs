@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace transf
+namespace transf.Utils
 {
 	/// <summary>
 	/// An abstract class that a worker thread can derive from and easily be started. 

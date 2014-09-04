@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Text;
 using transf.Log;
+using transf.Net;
 
 namespace transf
 {
