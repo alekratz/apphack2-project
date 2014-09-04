@@ -59,88 +59,22 @@ namespace transf
         }
 
         /// <summary>
-        /// Gets the next datagram in the queue
+        /// Gets the next message in the queue based on any delimiters. Returns null if no message exists with the specified criterea.
         /// </summary>
-        /// <returns>The next datagram in the queue. If none, returns null.</returns>
-        public Message NextDatagram()
-        {
-            lock (recvQueue)
-            {
-                for (int i = 0; i < recvQueue.Count; i++)
-                {
-                    if (recvQueue[i].MessageType == MessageType.Datagram)
-                    {
-                        Message msg = recvQueue[i];
-                        recvQueue.RemoveAt(i);
-                        return msg;
-                    }
-                }
-            }
-            // didn't return, so it's nothing
-            return null;
-        }
-
-        /// <summary>
-        /// Gets the next datagram in the queue from the specified address
-        /// </summary>
-        /// <param name="from">Specifies who the next datagram returned should be from.</param>
+        /// <param name="type">The type of the next message.</param>
+        /// <param name="opcode"></param>
+        /// <param name="from"></param>
         /// <returns></returns>
-        public Message NextDatagramFrom(IPAddress from)
+        public Message NextMessage(MessageType type = MessageType.Direct, Opcode opcode = Opcode.None, IPAddress from = null)
         {
             lock (recvQueue)
             {
-                // find the first item in the queue that matches the address
                 for (int i = 0; i < recvQueue.Count; i++)
                 {
-                    if (recvQueue[i].MessageType == MessageType.Datagram && recvQueue[i].RemoteAddress == from)
-                    {
-                        Message msg = recvQueue[i];
-                        recvQueue.RemoveAt(i);
-                        return msg;
-                    }
-                }
-            }
-            // wasn't found, return null
-            return null;
-        }
-
-        /// <summary>
-        /// Gets the next direct message in the queue.
-        /// </summary>
-        /// <returns>The next direct message in the queue. If none, returns null.</returns>
-        public Message NextDirectMessage()
-        {
-            lock (recvQueue)
-            {
-                if (recvQueue.Count == 0)
-                    return null;
-                for (int i = 0; i < recvQueue.Count; i++)
-                {
-                    if (recvQueue[i].MessageType == MessageType.Direct)
-                    {
-                        Message message = recvQueue[i];
-                        recvQueue.RemoveAt(i);
-                        return message;
-                    }
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Gets the next direct message in the queue based on any delimiters specified.
-        /// </summary>
-        /// <param name="from">Specifies who the next direct message returned should be from.</param>
-        /// <returns>The next direct message in the queue. If none, returns null.</returns>
-        public Message NextDirectMessageFrom(IPAddress from)
-        {
-            lock (recvQueue)
-            {
-                if (recvQueue.Count == 0)
-                    return null;
-                for (int i = 0; i < recvQueue.Count; i++)
-                {
-                    if (recvQueue[i].MessageType == MessageType.Direct && recvQueue[i].RemoteAddress == from)
+                    if(
+                        (recvQueue[i].MessageType == type || type == MessageType.Direct) &&
+                        (recvQueue[i].Opcode == opcode || opcode == Opcode.None) &&
+                        (recvQueue[i].RemoteAddress == from || from == null))
                     {
                         Message msg = recvQueue[i];
                         recvQueue.RemoveAt(i);
@@ -193,7 +127,10 @@ namespace transf
                     {
                         IPEndPoint endpoint = new IPEndPoint(0, 0);
                         byte[] data = datagramClient.Receive(ref endpoint);
-                        recvQueue.AddToBack(new Message(MessageType.Datagram, endpoint.Address, data));
+                        Message message = new Message(MessageType.Datagram, endpoint.Address, data);
+                        //if (message.Opcode == Opcode.Discovery)
+                        //    message.MessageType = MessageType.Broadcast;
+                        recvQueue.AddToBack(message);
                         Logger.WriteVerbose(Logger.GROUP_NET, "Received datagram from {0}, {1} bytes", endpoint.Address, data.Length);
                     }
                     catch (SocketException ex)
@@ -216,10 +153,11 @@ namespace transf
                             stream.Read(readSizeBytes, 0, 4);
                             readSize = BitConverter.ToInt32(readSizeBytes, 0);
 
-                            byte[] message = new byte[readSize];
-                            stream.Read(message, 0, readSize);
+                            byte[] data = new byte[readSize];
+                            stream.Read(data, 0, readSize);
                             IPAddress addr = ((IPEndPoint)client.RemoteEndPoint).Address;
-                            recvQueue.AddToBack(new Message(MessageType.Direct, addr, message));
+                            Message message = new Message(MessageType.Direct, addr, data);
+                            recvQueue.AddToBack(message);
                             Logger.WriteVerbose(Logger.GROUP_NET, "Received direct message from {0}, {1} bytes", addr, readSize);
                         }
                     }

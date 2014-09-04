@@ -77,7 +77,7 @@ namespace transf
 			while (MessageWorker.Instance.DatagramsAvailable > 0)
 			{
 				// Get the data
-				Message message = MessageWorker.Instance.NextDatagram();
+                Message message = MessageWorker.Instance.NextMessage(opcode:Opcode.Discovery); // this is literally all we care about
                 // if it's not a valid message, continue
                 if (!message.HasValidHeader())
                     continue;
