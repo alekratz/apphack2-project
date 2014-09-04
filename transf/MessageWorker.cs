@@ -8,28 +8,24 @@ using System.Threading;
 using Nito;
 using transf.Log;
 using transf.Utils;
+using transf.Net;
 
 namespace transf
 {
-    // Some typedefs
-    using Message = Tuple<IPAddress, byte[]>;
-
     class MessageWorker
         : WorkerThread
     {
         private UdpClient datagramClient;
-        private Deque<Message> datagramSendQueue;
-        private Deque<Message> datagramRecvQueue;
         private TcpListener directClient;
-        private Deque<Message> directSendQueue;
-        private Deque<Message> directRecvQueue;
+        private Deque<Message> recvQueue;
+        private Deque<Message> sendQueue;
         private HashSet<Socket> connectedClients; // the list of connected clients
         private int port;
 
         /// <summary>
         /// Gets the number of datagrams queued and available for reading
         /// </summary>
-        public int DatagramsAvailable { get { return datagramRecvQueue.Count; } }
+        public int DatagramsAvailable { get { return recvQueue.Count; } }
 
         #region Singleton members
         private static MessageWorker instance;
@@ -46,56 +42,42 @@ namespace transf
 
         private MessageWorker()
         {
-            datagramSendQueue = new Deque<Message>();
-            datagramRecvQueue = new Deque<Message>();
-            directSendQueue = new Deque<Message>();
-            directRecvQueue = new Deque<Message>();
+            recvQueue = new Deque<Message>();
+            sendQueue = new Deque<Message>();
 
             connectedClients = new HashSet<Socket>();
         }
 
         #region Read/write methods
         /// <summary>
-        /// Enqueues a datagram to be sent to a given address.
+        /// Enqueues a message to be sent.
         /// </summary>
-        /// <param name="data">The data to send</param>
-        /// <param name="to">The address to send the data to</param>
-        public void SendDatagram(byte[] data, IPAddress to)
+        /// <param name="message">The message to be sent.</param>
+        public void SendMessage(Message message)
         {
-            lock (datagramSendQueue)
-            {
-                datagramSendQueue.AddToBack(new Message(to, data));
-            }
-        }
-
-        /// <summary>
-        /// Enqueues a message to be sent directly to a source.
-        /// </summary>
-        /// <param name="data">The data to send</param>
-        /// <param name="to">The address to send the data to</param>
-        public void SendDirect(byte[] data, IPAddress to)
-        {
-            lock (directSendQueue)
-            {
-                directSendQueue.AddToBack(new Message(to, data));
-            }
+            sendQueue.AddToBack(message);
         }
 
         /// <summary>
         /// Gets the next datagram in the queue
         /// </summary>
         /// <returns>The next datagram in the queue. If none, returns null.</returns>
-        public byte[] NextDatagram(ref IPAddress sender)
+        public Message NextDatagram()
         {
-            lock (datagramRecvQueue)
+            lock (recvQueue)
             {
-                // nothing is available
-                if (datagramRecvQueue.Count == 0)
-                    return null;
-                Message message = datagramRecvQueue.RemoveFromFront();
-                sender = message.Item1;
-                return message.Item2;
+                for (int i = 0; i < recvQueue.Count; i++)
+                {
+                    if (recvQueue[i].MessageType == MessageType.Datagram)
+                    {
+                        Message msg = recvQueue[i];
+                        recvQueue.RemoveAt(i);
+                        return msg;
+                    }
+                }
             }
+            // didn't return, so it's nothing
+            return null;
         }
 
         /// <summary>
@@ -103,27 +85,46 @@ namespace transf
         /// </summary>
         /// <param name="from">Specifies who the next datagram returned should be from.</param>
         /// <returns></returns>
-        public byte[] NextDatagramFrom(ref IPAddress sender, IPAddress from)
+        public Message NextDatagramFrom(IPAddress from)
         {
-            lock (datagramRecvQueue)
+            lock (recvQueue)
             {
-                // nothing is available
-                if (datagramRecvQueue.Count == 0)
-                    return null;
                 // find the first item in the queue that matches the address
-                for (int i = 0; i < datagramRecvQueue.Count; i++)
+                for (int i = 0; i < recvQueue.Count; i++)
                 {
-                    if (datagramRecvQueue[i].Item1 == from)
+                    if (recvQueue[i].MessageType == MessageType.Datagram && recvQueue[i].RemoteAddress == from)
                     {
-                        sender = datagramRecvQueue[i].Item1;
-                        byte[] msg = datagramRecvQueue[i].Item2;
-                        datagramRecvQueue.RemoveAt(i);
+                        Message msg = recvQueue[i];
+                        recvQueue.RemoveAt(i);
                         return msg;
                     }
                 }
-                // wasn't found, return null
-                return null;
             }
+            // wasn't found, return null
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the next direct message in the queue.
+        /// </summary>
+        /// <returns>The next direct message in the queue. If none, returns null.</returns>
+        public Message NextDirectMessage()
+        {
+            lock (recvQueue)
+            {
+                if (recvQueue.Count == 0)
+                    return null;
+                for (int i = 0; i < recvQueue.Count; i++)
+                {
+                    if (recvQueue[i].MessageType == MessageType.Direct)
+                    {
+                        Message message = recvQueue[i];
+                        recvQueue.RemoveAt(i);
+                        return message;
+                    }
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -131,36 +132,23 @@ namespace transf
         /// </summary>
         /// <param name="from">Specifies who the next direct message returned should be from.</param>
         /// <returns>The next direct message in the queue. If none, returns null.</returns>
-        public byte[] NextDirectMessage(ref IPAddress sender)
+        public Message NextDirectMessageFrom(IPAddress from)
         {
-            lock (directRecvQueue)
+            lock (recvQueue)
             {
-                if (directRecvQueue.Count == 0)
+                if (recvQueue.Count == 0)
                     return null;
-                Message message = directRecvQueue.RemoveFromFront();
-                sender = message.Item1;
-                return message.Item2;
-            }
-        }
-
-        public byte[] NextDirectMessageFrom(ref IPAddress sender, IPAddress from)
-        {
-            lock (directRecvQueue)
-            {
-                if (directRecvQueue.Count == 0)
-                    return null;
-                for (int i = 0; i < directRecvQueue.Count; i++)
+                for (int i = 0; i < recvQueue.Count; i++)
                 {
-                    if (directRecvQueue[i].Item1 == from)
+                    if (recvQueue[i].MessageType == MessageType.Direct && recvQueue[i].RemoteAddress == from)
                     {
-                        sender = directRecvQueue[i].Item1;
-                        byte[] msg = directRecvQueue[i].Item2;
-                        directRecvQueue.RemoveAt(i);
+                        Message msg = recvQueue[i];
+                        recvQueue.RemoveAt(i);
                         return msg;
                     }
                 }
-                return null;
             }
+            return null;
         }
         #endregion
 
@@ -196,17 +184,16 @@ namespace transf
         /// </summary>
         private void ReceiveMessages()
         {
-            // Datagrams
-            lock (datagramRecvQueue)
+            lock (recvQueue)
             {
-                // Check datagram for any messages
+                // Datagrams
                 while (datagramClient.Available > 0)
                 {
                     try
                     {
                         IPEndPoint endpoint = new IPEndPoint(0, 0);
                         byte[] data = datagramClient.Receive(ref endpoint);
-                        datagramRecvQueue.AddToBack(new Message(endpoint.Address, data));
+                        recvQueue.AddToBack(new Message(MessageType.Datagram, endpoint.Address, data));
                         Logger.WriteVerbose(Logger.GROUP_NET, "Received datagram from {0}, {1} bytes", endpoint.Address, data.Length);
                     }
                     catch (SocketException ex)
@@ -215,11 +202,8 @@ namespace transf
                         Logger.WriteError(Logger.GROUP_NET, ex.Message);
                     }
                 }
-            }
 
-            // Direct messages
-            lock (directRecvQueue)
-            {
+                // Direct messages
                 lock (connectedClients)
                 {
                     foreach (Socket client in connectedClients)
@@ -235,7 +219,7 @@ namespace transf
                             byte[] message = new byte[readSize];
                             stream.Read(message, 0, readSize);
                             IPAddress addr = ((IPEndPoint)client.RemoteEndPoint).Address;
-                            datagramRecvQueue.AddToBack(new Message(addr, message));
+                            recvQueue.AddToBack(new Message(MessageType.Direct, addr, message));
                             Logger.WriteVerbose(Logger.GROUP_NET, "Received direct message from {0}, {1} bytes", addr, readSize);
                         }
                     }
@@ -248,44 +232,39 @@ namespace transf
         /// </summary>
         private void SendMessages()
         {
-            // Datagrams
-            lock (datagramSendQueue)
-            {
-                foreach (Message message in datagramSendQueue)
-                {
-                    IPAddress toAddr = message.Item1;
-                    byte[] data = message.Item2;
-                    IPEndPoint to = new IPEndPoint(toAddr, port);
-                    datagramClient.Send(data, data.Length, to);
-                    Logger.WriteVerbose(Logger.GROUP_NET, "Sent datagram to {0}, {1} bytes", message.Item1, message.Item2.Length);
-                }
-                datagramSendQueue.Clear();
-            }
 
-            // Direct messages
-            lock (directSendQueue)
+            lock (sendQueue)
             {
-                foreach (Message message in directSendQueue)
+                // Datagrams
+                foreach (Message message in sendQueue)
                 {
-                    IPAddress toAddr = message.Item1;
-                    byte[] data = message.Item2;
-                    IPEndPoint to = new IPEndPoint(toAddr, port);
-                    // Use a different client to connect to the desired host
-                    TcpClient client = new TcpClient();
-                    try
+                    IPEndPoint to = new IPEndPoint(message.RemoteAddress, port);
+                    switch (message.MessageType)
                     {
-                        client.Connect(to);
-                        client.GetStream().Write(data, 0, data.Length);
-                        client.GetStream().Close();
-                        Logger.WriteVerbose(Logger.GROUP_NET, "Sent direct message to {0}, {1} bytes", message.Item1, message.Item2.Length);
-                    }
-                    catch (SocketException ex)
-                    {
-                        Logger.WriteError(Logger.GROUP_NET, "Could not send message to {0} on port {1}", to.Address, to.Port);
-                        Logger.WriteError(Logger.GROUP_NET, ex.Message);
+                        case MessageType.Broadcast:
+                            to.Address = IPAddress.Broadcast; // guarantees that it will be broadcast
+                            datagramClient.Send(message.RawMessage, message.RawMessage.Length, to);
+                            break;
+                        case MessageType.Datagram:
+                            datagramClient.Send(message.RawMessage, message.RawMessage.Length, to);
+                            break;
+                        case MessageType.Direct:
+                            TcpClient client = new TcpClient();
+                            try
+                            {
+                                client.Connect(to);
+                                client.GetStream().Write(message.RawMessage, 0, message.RawMessage.Length);
+                                Logger.WriteVerbose(Logger.GROUP_NET, "Sent direct message to {0}, {1} bytes", message.RemoteAddress, message.RawMessage.Length);
+                            }
+                            catch (SocketException ex)
+                            {
+                                Logger.WriteError(Logger.GROUP_NET, "Could not send message to {0} on port {1}", to.Address, to.Port);
+                                Logger.WriteError(Logger.GROUP_NET, ex.Message);
+                            }
+                            break;
                     }
                 }
-                directSendQueue.Clear();
+                sendQueue.Clear();
             }
         }
         #endregion

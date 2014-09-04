@@ -8,17 +8,14 @@ using System.Collections;
 using System.Diagnostics;
 using transf.Log;
 using transf.Utils;
+using transf.Net;
 
 namespace transf
 {
 	public class DiscoveryWorker : WorkerThread
 	{
 		//public const int DEFAULT_PORT = 44444;
-		/// <summary>
-		/// The "magic number" at the beginning of each of the packets, to denote that we care about it
-		/// </summary>
-		public const uint MAGIC = 0xf510ba2d;
-
+		
 		/// <summary>
 		/// The broadcast period, in milliseconds. This is the amount of time between broadcasts.
 		/// </summary>
@@ -64,10 +61,10 @@ namespace transf
 				// Create a broadcast packet
 				// starts with the 4-byte magic number and a nickname
 				byte[] packet = new byte[4 + nickname.Length];
-				BitConverter.GetBytes (MAGIC).CopyTo (packet, 0);
+				BitConverter.GetBytes (Message.MAGIC).CopyTo (packet, 0);
 				Encoding.ASCII.GetBytes (nickname).CopyTo (packet, 4);
 				// Send it to the broadcast address
-                MessageWorker.Instance.SendDatagram(packet, IPAddress.Broadcast);
+                Message message = new Message(MessageType.Broadcast, IPAddress.Broadcast, packet);
 				lastBcast = TimeUtils.GetUnixTimestampMs ();
 			}
 		}
@@ -79,29 +76,26 @@ namespace transf
 		{
 			while (MessageWorker.Instance.DatagramsAvailable > 0)
 			{
-                IPAddress address = null;
 				// Get the data
-				byte[] msg = MessageWorker.Instance.NextDatagram(ref address);
-				if (msg.Length < 4) // it's not got at least four bytes, so ignore it
-					continue;
-				// get the first four bytes and compare it to the magic number
-				uint magic = BitConverter.ToUInt32 (msg, 0);
-                if (magic != MAGIC) // if it's not the magic number, continue
+				Message message = MessageWorker.Instance.NextDatagram();
+                // if it's not a valid message, continue
+                if (!message.HasValidHeader())
                     continue;
-                if (address.Equals(thisAddr)) // if it's us, continue
+
+                if (message.RemoteAddress.Equals(thisAddr)) // if it's us, continue
                 {
                     Logger.WriteVerbose(Logger.GROUP_NET, "Received discovery signal from self");
                     continue;
                 }
 
-				byte[] noMagicMsg = new byte[msg.Length - 4];
-				Array.Copy (msg, 4, noMagicMsg, 0, noMagicMsg.Length);
-				string remoteNickname = Encoding.ASCII.GetString (noMagicMsg);
+                message.Skip(4); // skip past the magic
+                string remoteNickname = message.NextString(32);
 
+                IPAddress address = message.RemoteAddress;
 				Node remoteNode = new Node () 
 				{
 					Nickname = remoteNickname,
-					RemoteAddress = address,
+                    RemoteAddress = address,
 					LastCheckin = TimeUtils.GetUnixTimestampMs ()
 				};
 
