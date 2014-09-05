@@ -42,7 +42,10 @@ namespace transf
             CalculateHash();
         }
 
-        private void CalculateHash()
+        /// <summary>
+        /// Calculates the murmur3 hash for the given file.
+        /// </summary>
+        public void CalculateHash()
         {
             Murmur128 hasher = MurmurHash.Create128();
 
