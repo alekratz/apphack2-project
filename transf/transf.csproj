@@ -29,11 +29,14 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MurmurHash">
+      <HintPath>..\packages\murmurhash.1.0.0\lib\net40\MurmurHash.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileEntry.cs" />
-    <Compile Include="FileSystem.cs" />
+    <Compile Include="File\FileEntry.cs" />
+    <Compile Include="File\FileSystem.cs" />
     <Compile Include="Net\MessageWorker.cs" />
     <Compile Include="Net\Message.cs" />
     <Compile Include="Net\Opcode.cs" />
@@ -45,6 +48,9 @@
     <Compile Include="Net\Node.cs" />
     <Compile Include="Log\Logger.cs" />
     <Compile Include="Log\LogLevel.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

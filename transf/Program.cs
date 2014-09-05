@@ -51,6 +51,9 @@ namespace transf
                 msgWorker.Stop();
                 return;
             }
+
+            FileSystem fSystem = new FileSystem("..\\..");
+
 			discWorker.Join ();
 		}
 	}

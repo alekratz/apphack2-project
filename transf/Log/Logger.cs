@@ -11,6 +11,7 @@ namespace transf.Log
 
 		public const string GROUP_APP = "Application";
 		public const string GROUP_NET = "Net";
+        public const string GROUP_FS = "Filesystem";
 
 		#region Properties
 		/// <summary>
@@ -38,6 +39,7 @@ namespace transf.Log
 			// Add default groups
 			EnabledGroups.Add (GROUP_APP);
 			EnabledGroups.Add (GROUP_NET);
+            EnabledGroups.Add (GROUP_FS);
 #if DEBUG
 			LogLevel = LogLevel.Debug;
 #else
@@ -68,7 +70,7 @@ namespace transf.Log
 				return;
 
 			// Level, group, time, text
-			const string LOG_FORMAT = "[{0}] <{1}> [{2}]  {3}";
+			const string LOG_FORMAT = "[{0}] <{1}> [{2}] {3}  {4}";
 
 			string levelStr = level.ToString ();
 			string timeStr = DateTime.Now.ToLongTimeString ();
@@ -78,7 +80,7 @@ namespace transf.Log
 			// Make sure that no other thread accesses this
 			lock (OutStream)
 			{
-				OutStream.WriteLine (LOG_FORMAT, levelStr, group, timeStr, logStr);
+				OutStream.WriteLine (LOG_FORMAT, levelStr, group, timeStr, Environment.NewLine, logStr);
 			}
 		}
 

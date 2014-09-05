@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using Murmur;
 
 namespace transf
 {
@@ -16,9 +17,17 @@ namespace transf
         /// </summary>
         public string RelativePath { get; private set; }
         /// <summary>
-        /// Gets the absolute path to the file
+        /// Gets the absolute path to the file.
         /// </summary>
         public string AbsolutePath { get; private set; }
+        /// <summary>
+        /// Gets whether this file exists.
+        /// </summary>
+        public bool Exists { get { return File.Exists(AbsolutePath); } }
+
+        public string HashString { get; private set; }
+
+        public byte[] HashBytes { get; private set; }
 
         /// <summary>
         /// Creates a new FileEntry object with a specified file and filesystem as its root.
@@ -29,9 +38,21 @@ namespace transf
         {
             BaseName = Path.GetFileName(relativePath);
             RelativePath = relativePath;
-            AbsolutePath = Path.Combine(fileSystem.BaseDirectory, relativePath);
+            AbsolutePath = Path.GetFullPath(relativePath);
+            CalculateHash();
         }
 
-        
+        private void CalculateHash()
+        {
+            Murmur128 hasher = MurmurHash.Create128();
+
+            FileStream fileStream = File.OpenRead(AbsolutePath);
+            HashBytes = hasher.ComputeHash(fileStream);
+            StringBuilder hex = new StringBuilder(HashBytes.Length * 2);
+            foreach (byte b in HashBytes)
+                hex.AppendFormat("{0:x2}", b);
+            HashString = hex.ToString();
+            fileStream.Close();
+        }
     }
 }
