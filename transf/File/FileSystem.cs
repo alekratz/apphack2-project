@@ -8,7 +8,13 @@ namespace transf
 {
     class FileSystem
     {
+        /// <summary>
+        /// The path to the filesystem, relative to the working directory.
+        /// </summary>
         public string RelativeDirectory { get; private set; }
+        /// <summary>
+        /// The absolute path to the filesystem.
+        /// </summary>
         public string AbsoluteDirectory { get; private set; }
 
         private HashSet<FileEntry> files = new HashSet<FileEntry>();
@@ -35,24 +41,23 @@ namespace transf
 
         void fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
         {
-            Logger.WriteDebug(Logger.GROUP_FS, "File {0} renamed (full path {1})", e.Name, e.FullPath);
         }
 
         void fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            Logger.WriteDebug(Logger.GROUP_FS, "File {0} changed (full path {1})", e.Name, e.FullPath);
         }
 
         void fileSystemWatcher_Deleted(object sender, FileSystemEventArgs e)
         {
-            Logger.WriteDebug(Logger.GROUP_FS, "File {0} deleted (full path {1})", e.Name, e.FullPath);
         }
 
         void fileSystemWatcher_Created(object sender, FileSystemEventArgs e)
         {
-            Logger.WriteDebug(Logger.GROUP_FS, "File {0} created (full path {1})", e.Name, e.FullPath);
         }
 
+        /// <summary>
+        /// Scans all of the files in the filesystem and gets their hashes.
+        /// </summary>
         public void ScanDirectory()
         {
             files.Clear();
