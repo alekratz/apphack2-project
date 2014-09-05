@@ -32,7 +32,8 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Deque.cs" />
+    <Compile Include="FileEntry.cs" />
+    <Compile Include="FileSystem.cs" />
     <Compile Include="Net\MessageWorker.cs" />
     <Compile Include="Net\Message.cs" />
     <Compile Include="Net\Opcode.cs" />
@@ -46,7 +47,4 @@
     <Compile Include="Log\LogLevel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
 </Project>

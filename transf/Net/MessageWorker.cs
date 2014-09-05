@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections;
 using System.Threading;
-using Nito;
 using transf.Log;
 using transf.Utils;
 
@@ -16,8 +15,8 @@ namespace transf.Net
     {
         private UdpClient datagramClient;
         private TcpListener directClient;
-        private Deque<Message> recvQueue;
-        private Deque<Message> sendQueue;
+        private List<Message> recvQueue;
+        private List<Message> sendQueue;
         private HashSet<Socket> connectedClients; // the list of connected clients
         private int port;
 
@@ -41,8 +40,8 @@ namespace transf.Net
 
         private MessageWorker()
         {
-            recvQueue = new Deque<Message>();
-            sendQueue = new Deque<Message>();
+            recvQueue = new List<Message>();
+            sendQueue = new List<Message>();
 
             connectedClients = new HashSet<Socket>();
         }
@@ -54,7 +53,7 @@ namespace transf.Net
         /// <param name="message">The message to be sent.</param>
         public void SendMessage(Message message)
         {
-            sendQueue.AddToBack(message);
+            sendQueue.Add(message);
         }
 
         /// <summary>
@@ -130,7 +129,7 @@ namespace transf.Net
                         Message message = new Message(MessageType.Datagram, endpoint.Address, data);
                         //if (message.Opcode == Opcode.Discovery)
                         //    message.MessageType = MessageType.Broadcast;
-                        recvQueue.AddToBack(message);
+                        recvQueue.Add(message);
                         Logger.WriteVerbose(Logger.GROUP_NET, "Received datagram from {0}, {1} bytes", endpoint.Address, data.Length);
                     }
                     catch (SocketException ex)
@@ -157,7 +156,7 @@ namespace transf.Net
                             stream.Read(data, 0, readSize);
                             IPAddress addr = ((IPEndPoint)client.RemoteEndPoint).Address;
                             Message message = new Message(MessageType.Direct, addr, data);
-                            recvQueue.AddToBack(message);
+                            recvQueue.Add(message);
                             Logger.WriteVerbose(Logger.GROUP_NET, "Received direct message from {0}, {1} bytes", addr, readSize);
                         }
                     }
