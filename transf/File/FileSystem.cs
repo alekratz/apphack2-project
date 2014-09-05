@@ -12,6 +12,7 @@ namespace transf
         public string AbsoluteDirectory { get; private set; }
 
         private HashSet<FileEntry> files = new HashSet<FileEntry>();
+        private FileSystemWatcher fileSystemWatcher;
 
         public FileSystem(string baseDirectory)
         {
@@ -20,6 +21,36 @@ namespace transf
             Logger.WriteDebug(Logger.GROUP_FS, "Created FileSystem with base directory {0}", RelativeDirectory);
             ScanDirectory();
             Logger.WriteDebug(Logger.GROUP_FS, "Registered {0} files", files.Count);
+
+            // Create filesystemwatcher and register events
+            fileSystemWatcher = new FileSystemWatcher(AbsoluteDirectory);
+            fileSystemWatcher.Filter = "*";
+            fileSystemWatcher.NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size;
+            fileSystemWatcher.Created += fileSystemWatcher_Created;
+            fileSystemWatcher.Deleted += fileSystemWatcher_Deleted;
+            fileSystemWatcher.Changed += fileSystemWatcher_Changed;
+            fileSystemWatcher.Renamed += fileSystemWatcher_Renamed;
+            fileSystemWatcher.EnableRaisingEvents = true;
+        }
+
+        void fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            Logger.WriteDebug(Logger.GROUP_FS, "File {0} renamed (full path {1})", e.Name, e.FullPath);
+        }
+
+        void fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            Logger.WriteDebug(Logger.GROUP_FS, "File {0} changed (full path {1})", e.Name, e.FullPath);
+        }
+
+        void fileSystemWatcher_Deleted(object sender, FileSystemEventArgs e)
+        {
+            Logger.WriteDebug(Logger.GROUP_FS, "File {0} deleted (full path {1})", e.Name, e.FullPath);
+        }
+
+        void fileSystemWatcher_Created(object sender, FileSystemEventArgs e)
+        {
+            Logger.WriteDebug(Logger.GROUP_FS, "File {0} created (full path {1})", e.Name, e.FullPath);
         }
 
         public void ScanDirectory()
