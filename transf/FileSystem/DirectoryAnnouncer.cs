@@ -15,6 +15,7 @@ namespace transf.FileSystem
     class DirectoryAnnouncer
         : WorkerThread
     {
+        // TODO : scrap this and rename it to DirectoryDiscoveryWorker
         public DirectoryEntry RootEntry { get; set; }
 
         public DirectoryAnnouncer(DirectoryEntry rootEntry)
