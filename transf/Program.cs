@@ -55,7 +55,7 @@ namespace transf
             }
 
             DirectoryEntry fSystem = new DirectoryEntry("../.."); // make this more neutral
-
+            Console.WriteLine("Found {0} files in the filesystem", fSystem.TreeFileCount);
 			discWorker.Join ();
 		}
 	}
