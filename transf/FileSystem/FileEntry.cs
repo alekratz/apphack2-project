@@ -7,6 +7,7 @@ using Murmur;
 namespace transf.FileSystem
 {
     class FileEntry
+        : IFileSystemEntry
     {
         /// <summary>
         /// Gets the name of the file itself.

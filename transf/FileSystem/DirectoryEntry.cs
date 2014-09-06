@@ -9,29 +9,35 @@ using transf.Utils;
 namespace transf.FileSystem
 {
     class DirectoryEntry
+        : IFileSystemEntry
     {
         /// <summary>
-        /// The path to the filesystem, relative to the working directory.
+        /// The base directory name.
         /// </summary>
-        public string RelativeDirectory { get; private set; }
+        public string BaseName { get { return Path.GetDirectoryName(AbsolutePath); } }
+        /// <summary>
+        /// The path to the filesystem, relative to the current working directory.
+        /// </summary>
+        public string RelativePath { get; private set; }
         /// <summary>
         /// The absolute path to the filesystem.
         /// </summary>
-        public string AbsoluteDirectory { get; private set; }
+        public string AbsolutePath { get; private set; }
 
         private HashSet<FileEntry> files = new HashSet<FileEntry>();
+        private HashSet<DirectoryEntry> directories = new HashSet<DirectoryEntry>();
         private FileSystemWatcher fileSystemWatcher;
 
         public DirectoryEntry(string baseDirectory)
         {
-            RelativeDirectory = baseDirectory;
-            AbsoluteDirectory = Path.GetFullPath(baseDirectory);
-            Logger.WriteDebug(Logger.GROUP_FS, "Created FileSystem with base directory {0}", RelativeDirectory);
+            RelativePath = baseDirectory;
+            AbsolutePath = Path.GetFullPath(baseDirectory);
+            Logger.WriteDebug(Logger.GROUP_FS, "Created FileSystem with base directory {0}", RelativePath);
             ScanDirectory();
             Logger.WriteDebug(Logger.GROUP_FS, "Registered {0} files", files.Count);
 
             // Create filesystemwatcher and register events
-            fileSystemWatcher = new FileSystemWatcher(AbsoluteDirectory);
+            fileSystemWatcher = new FileSystemWatcher(AbsolutePath);
             fileSystemWatcher.Filter = "*";
             fileSystemWatcher.NotifyFilter = 
                 NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite;
@@ -97,10 +103,10 @@ namespace transf.FileSystem
             try
             {
                 //Logger.WriteDebug(Logger.GROUP_FS, "Full path: {0}", e.FullPath);
-                //Logger.WriteDebug(Logger.GROUP_FS, "Relative path: {0}", IOUtils.GetRelativePath(e.FullPath, AbsoluteDirectory));
+                //Logger.WriteDebug(Logger.GROUP_FS, "Relative path: {0}", IOUtils.GetRelativePath(e.FullPath, AbsolutePath));
                 FileEntry fEntry = new FileEntry(this, e.FullPath);
                 files.Add(fEntry);
-                Logger.WriteVerbose(Logger.GROUP_FS, "Added: {0} {1}", fEntry.HashString, fEntry.RelativePath);
+                Logger.WriteVerbose(Logger.GROUP_FS, "Added: {0} {1}", fEntry.HashString, fEntry.BaseName);
             }
             catch (FileNotFoundException)
             {
@@ -114,16 +120,10 @@ namespace transf.FileSystem
         public void ScanDirectory()
         {
             files.Clear();
-            Dive(RelativeDirectory);
-        }
+            directories.Clear();
 
-        /// <summary>
-        /// Recursively scans the filesystem
-        /// </summary>
-        private void Dive(string root)
-        {
             // Go through files
-            string[] strFiles = Directory.GetFiles(root);
+            string[] strFiles = Directory.GetFiles(RelativePath);
             foreach (string file in strFiles)
             {
                 try
@@ -132,17 +132,19 @@ namespace transf.FileSystem
                     files.Add(fEntry);
                     Logger.WriteVerbose(Logger.GROUP_FS, "Added: {0} {1}", fEntry.HashString, fEntry.BaseName);
                 }
-                catch(FileNotFoundException)
+                catch (FileNotFoundException)
                 {
                     Logger.WriteWarning(Logger.GROUP_FS, "Could not open {0}, omitting file", file);
                 }
             }
 
             // Go through directories
-            string[] strDirectories = Directory.GetDirectories(root);
+            string[] strDirectories = Directory.GetDirectories(RelativePath);
             foreach (string directory in strDirectories)
             {
-                Dive(directory);
+                DirectoryEntry dEntry = new DirectoryEntry(directory);
+                directories.Add(dEntry);
+                Logger.WriteVerbose(Logger.GROUP_FS, "Added: {0}", dEntry.BaseName);
             }
         }
     }

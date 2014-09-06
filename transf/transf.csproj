@@ -49,6 +49,7 @@
     <Compile Include="Log\LogLevel.cs" />
     <Compile Include="FileSystem\FileEntry.cs" />
     <Compile Include="FileSystem\DirectoryEntry.cs" />
+    <Compile Include="FileSystem\IFileSystemEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
