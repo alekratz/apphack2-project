@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Diagnostics;
@@ -59,29 +60,13 @@ namespace transf.Net
         /// <summary>
         /// Gets the next message in the queue based on any delimiters. Returns null if no message exists with the specified criterea.
         /// </summary>
-        /// <param name="type">The type of the next message.</param>
-        /// <param name="opcode"></param>
-        /// <param name="from"></param>
         /// <returns></returns>
-        public Message NextMessage(MessageType type = MessageType.Direct, Opcode opcode = Opcode.None, IPAddress from = null)
+        public Message NextMessage(Func<Message, bool> match)
         {
-            // TODO : LINQ-ify this
-            lock (recvQueue)
-            {
-                for (int i = 0; i < recvQueue.Count; i++)
-                {
-                    if(
-                        (recvQueue[i].MessageType == type || type == MessageType.Direct) &&
-                        (recvQueue[i].Opcode == opcode || opcode == Opcode.None) &&
-                        (recvQueue[i].RemoteAddress == from || from == null))
-                    {
-                        Message msg = recvQueue[i];
-                        recvQueue.RemoveAt(i);
-                        return msg;
-                    }
-                }
-            }
-            return null;
+            Message message = recvQueue.FirstOrDefault(match);
+            if(message != null)
+                recvQueue.Remove(message); // remove it from the list
+            return message;
         }
         #endregion
 
