@@ -23,6 +23,36 @@ namespace transf.FileSystem
         /// The absolute path to the filesystem.
         /// </summary>
         public string AbsolutePath { get; private set; }
+        /// <summary>
+        /// Gets the number of files in the directory.
+        /// </summary>
+        public int FileCount { get { return files.Count; } }
+        /// <summary>
+        /// Gets the number of files in the current directory tree.
+        /// </summary>
+        public int TreeFileCount
+        { 
+            get
+            { 
+                int sum = 0;
+                foreach (DirectoryEntry entry in directories)
+                    sum += entry.TreeFileCount;
+                return sum + FileCount;
+            }
+        }
+        /// <summary>
+        /// Gets the filesystem tree from this directory as the root.
+        /// </summary>
+        public FileEntry[] Tree
+        {
+            get
+            {
+                List<FileEntry> theseFiles = new List<FileEntry>(files);
+                foreach (DirectoryEntry dEntry in directories)
+                    theseFiles.AddRange(dEntry.Tree);
+                return theseFiles.ToArray();
+            }
+        }
 
         private HashSet<FileEntry> files = new HashSet<FileEntry>();
         private HashSet<DirectoryEntry> directories = new HashSet<DirectoryEntry>();
@@ -32,9 +62,7 @@ namespace transf.FileSystem
         {
             RelativePath = baseDirectory;
             AbsolutePath = Path.GetFullPath(baseDirectory);
-            Logger.WriteDebug(Logger.GROUP_FS, "Created FileSystem with base directory {0}", RelativePath);
             ScanDirectory();
-            Logger.WriteDebug(Logger.GROUP_FS, "Registered {0} files", files.Count);
 
             // Create filesystemwatcher and register events
             fileSystemWatcher = new FileSystemWatcher(AbsolutePath);
@@ -48,6 +76,7 @@ namespace transf.FileSystem
             fileSystemWatcher.EnableRaisingEvents = true;
         }
 
+        #region Events
         void fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
         {
             // File was renamed, so remove it and add a new one
@@ -113,6 +142,7 @@ namespace transf.FileSystem
                 Logger.WriteWarning(Logger.GROUP_FS, "Could not open {0}, omitting file", e.Name);
             }
         }
+        #endregion
 
         /// <summary>
         /// Scans all of the files in the filesystem and gets their hashes.
