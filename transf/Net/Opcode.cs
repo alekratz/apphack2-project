@@ -15,6 +15,13 @@ namespace transf.Net
         /// Denotes the message was a broadcast message announcing the existence of itself.
         /// </summary>
         Discovery = 1,
-
+        /// <summary>
+        /// Request for the listing of a directory.
+        /// </summary>
+        RequestDirectoryListing = 10,
+        /// <summary>
+        /// Denotes that a directory listing will follow.
+        /// </summary>
+        DirectoryListing = 11,
     }
 }
