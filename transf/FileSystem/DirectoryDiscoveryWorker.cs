@@ -10,17 +10,17 @@ using transf.Utils;
 namespace transf.FileSystem
 {
     /// <summary>
-    /// Announces the directories to anyone who asks. Runs as a worker thread.
+    /// Aids in the discovery of remote directories.
     /// </summary>
-    class DirectoryAnnouncer
+    class DirectoryDiscoveryWorker
         : WorkerThread
     {
         // TODO : scrap this and rename it to DirectoryDiscoveryWorker
-        public DirectoryEntry RootEntry { get; set; }
+        public DirectoryEntry LocalRootEntry { get; set; }
 
-        public DirectoryAnnouncer(DirectoryEntry rootEntry)
+        public DirectoryDiscoveryWorker(DirectoryEntry rootEntry)
         {
-            RootEntry = rootEntry;
+            LocalRootEntry = rootEntry;
         }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace transf.FileSystem
         private void SendDirectoryListing(IPAddress remoteAddr)
         {
             List<byte> buffer = new List<byte>();
-            FileEntry[] fEntries = RootEntry.Tree;
+            FileEntry[] fEntries = LocalRootEntry.Tree;
             // each file path will be followed by its hash and its size as eight bytes
             foreach (FileEntry fEntry in fEntries)
             {
@@ -43,6 +43,13 @@ namespace transf.FileSystem
             Message message = Message.CreateOutgoingMessage(MessageType.Direct,
                                   remoteAddr, Opcode.DirectoryListing, buffer.ToArray());
             MessageWorker.Instance.SendMessage(message);
+        }
+
+        /// <summary>
+        /// Requests the directory listings from remote users.
+        /// </summary>
+        private void RequestDirectoryListings()
+        {
         }
 
         protected override bool Initialize(params object[] args)

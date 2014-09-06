@@ -50,8 +50,8 @@
     <Compile Include="FileSystem\FileEntry.cs" />
     <Compile Include="FileSystem\DirectoryEntry.cs" />
     <Compile Include="FileSystem\IFileSystemEntry.cs" />
-    <Compile Include="FileSystem\DirectoryAnnouncer.cs" />
     <Compile Include="Net\RemoteFileEntry.cs" />
+    <Compile Include="FileSystem\DirectoryDiscoveryWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -32,8 +32,8 @@ namespace transf
 		{
 			// This should be the first thing that's done
 			Logger.Instance = new Logger (Console.Out);
-			Logger.Instance.LogLevel = LogLevel.Verbose; // up the verbosity
-            Logger.Instance.EnabledGroups.Remove(Logger.GROUP_NET);
+			Logger.Instance.LogLevel = LogLevel.Debug; // up the verbosity
+            //Logger.Instance.EnabledGroups.Remove(Logger.GROUP_NET);
 
 			const int PORT = 44444;
 			string nickname = GetNickname ();
