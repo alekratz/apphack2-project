@@ -92,7 +92,8 @@ namespace transf.FileSystem
             dMsg = MessageWorker.Instance.NextMessage(msg => msg.Opcode == Opcode.DirectoryListing);
             if (dMsg != null)
             {
-                
+                // New directory listings from nodes
+                // TODO : record these
             }
         }
 
@@ -105,7 +106,8 @@ namespace transf.FileSystem
         {
             while (!StopSignal)
             {
-
+                ReceiveMessages();
+                RequestDirectoryListings();
 
                 Thread.Sleep(50);
             }
