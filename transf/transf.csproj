@@ -35,8 +35,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="File\FileEntry.cs" />
-    <Compile Include="File\FileSystem.cs" />
     <Compile Include="Net\MessageWorker.cs" />
     <Compile Include="Net\Message.cs" />
     <Compile Include="Net\Opcode.cs" />
@@ -49,6 +47,8 @@
     <Compile Include="Net\Node.cs" />
     <Compile Include="Log\Logger.cs" />
     <Compile Include="Log\LogLevel.cs" />
+    <Compile Include="FileSystem\FileEntry.cs" />
+    <Compile Include="FileSystem\DirectoryEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

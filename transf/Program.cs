@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Text;
 using transf.Log;
 using transf.Net;
+using transf.FileSystem;
 
 namespace transf
 {
@@ -46,14 +47,14 @@ namespace transf
                 Logger.WriteError(Logger.GROUP_APP, "Couldn't start message worker, exiting");
                 return;
             }
-            if (!discWorker.Start(PORT, nickname))
+            if (!discWorker.Start(nickname))
             {
                 Logger.WriteError(Logger.GROUP_APP, "Couldn't start discovery worker, exiting");
                 msgWorker.Stop();
                 return;
             }
 
-            FileSystem fSystem = new FileSystem("..\\..");
+            DirectoryEntry fSystem = new DirectoryEntry("../.."); // make this more neutral
 
 			discWorker.Join ();
 		}

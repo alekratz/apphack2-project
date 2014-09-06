@@ -101,7 +101,6 @@ namespace transf.Net
         /// <returns></returns>
         public string NextString(int max)
         {
-            int newIterator = iteratorIndex + max;
             byte[] buffer = new byte[max];
             int count = Next(ref buffer, max);
             return Encoding.ASCII.GetString(buffer, 0, count);

@@ -39,7 +39,6 @@ namespace transf.Net
         #endregion
 
         private IPAddress thisAddr;
-		private int port;
 		private string nickname;
 		private ulong lastBcast;
 
@@ -64,6 +63,7 @@ namespace transf.Net
 				Encoding.ASCII.GetBytes (nickname).CopyTo (packet, 4);
 				// Send it to the broadcast address
                 Message message = new Message(MessageType.Broadcast, IPAddress.Broadcast, packet);
+                MessageWorker.Instance.SendMessage(message);
 				lastBcast = TimeUtils.GetUnixTimestampMs ();
 			}
 		}
@@ -134,8 +134,7 @@ namespace transf.Net
 
         protected override bool Initialize(params object[] args)
         {
-            port = (int)args[0];
-            nickname = (string)args[1];
+            nickname = (string)args[0];
 
             DiscoveredNodes = new HashSet<Node>();
 
