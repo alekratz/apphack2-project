@@ -235,7 +235,7 @@ namespace transf.Net
 
             while(!StopSignal)
             {
-                const int SLEEP_MS = 500;
+                const int SLEEP_MS = 100;
                 ulong timeStart = TimeUtils.GetUnixTimestampMs();
 
                 // TODO : add PruneConnections() method
