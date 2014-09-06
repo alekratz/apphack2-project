@@ -70,7 +70,7 @@ namespace transf.Log
 				return;
 
 			// Level, group, time, text
-			const string LOG_FORMAT = "[{0}] <{1}> [{2}] {3}  {4}";
+			const string LOG_FORMAT = "[{0}] <{1}> [{2}]  {3}";
 
 			string levelStr = level.ToString ();
 			string timeStr = DateTime.Now.ToLongTimeString ();
@@ -80,7 +80,7 @@ namespace transf.Log
 			// Make sure that no other thread accesses this
 			lock (OutStream)
 			{
-				OutStream.WriteLine (LOG_FORMAT, levelStr, group, timeStr, Environment.NewLine, logStr);
+				OutStream.WriteLine (LOG_FORMAT, levelStr, group, timeStr, logStr);
 			}
 		}
 
