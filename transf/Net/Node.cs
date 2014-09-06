@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Net;
+using System.Collections.Generic;
 using transf.Utils;
 
 namespace transf.Net
 {
-	public struct Node
+	public class Node
 	{
 		public string Nickname { get; set; }
 		public IPAddress RemoteAddress { get; set; }
 		public ulong LastCheckin { get; set; }
 
-		public const ulong MAX_TIMEOUT = 10000; // 10000 ms is the timeout
+		public const ulong MAX_TIMEOUT = 10000; // 10000 ms is the timeout      
 
 		/// <summary>
 		/// Determines whether this instance has timed out, based on the maximum timeout.
@@ -32,5 +33,4 @@ namespace transf.Net
             return obj.GetHashCode() == GetHashCode();
         }
 	}
-}
-
+}   
