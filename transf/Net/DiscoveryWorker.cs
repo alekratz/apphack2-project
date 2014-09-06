@@ -11,7 +11,7 @@ using transf.Utils;
 
 namespace transf.Net
 {
-	public class DiscoveryWorker : WorkerThread
+	class DiscoveryWorker : WorkerThread
 	{
 		//public const int DEFAULT_PORT = 44444;
 		
