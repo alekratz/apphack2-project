@@ -25,6 +25,10 @@ namespace transf.FileSystem
         /// Gets whether this file exists.
         /// </summary>
         public bool Exists { get { return File.Exists(AbsolutePath); } }
+        /// <summary>
+        /// Gets the file size.
+        /// </summary>
+        public long Size { get { return new FileInfo(AbsolutePath).Length; } }
 
         public string HashString { get; private set; }
 
