@@ -16,7 +16,6 @@ namespace transf.FileSystem
     class DirectoryDiscoveryWorker
         : WorkerThread
     {
-        // TODO : scrap this and rename it to DirectoryDiscoveryWorker
         public DirectoryEntry LocalRootEntry { get; set; }
 
         public DirectoryDiscoveryWorker(DirectoryEntry rootEntry)
@@ -81,19 +80,40 @@ namespace transf.FileSystem
         {
             Message dMsg;
             // check for messages that match the directory request
-            dMsg = MessageWorker.Instance.NextMessage(msg => msg.Opcode == Opcode.RequestDirectoryListing);
-            if (dMsg != null)
+            while((dMsg = MessageWorker.Instance.NextMessage(
+                msg => msg.Opcode == Opcode.RequestDirectoryListing)) != null)
             {
                 // if there's a request for the directory listing, send the directory listing
                 SendDirectoryListing(dMsg.RemoteAddress);
             }
 
             // Check for new directory listing messages
-            dMsg = MessageWorker.Instance.NextMessage(msg => msg.Opcode == Opcode.DirectoryListing);
-            if (dMsg != null)
+            while ((dMsg = MessageWorker.Instance.NextMessage(
+                msg => msg.Opcode == Opcode.DirectoryListing)) != null)
             {
-                // New directory listings from nodes
-                // TODO : record these
+                // make sure it's got a valid header
+                if (!dMsg.HasValidHeader())
+                    continue;
+                ulong naow = TimeUtils.GetUnixTimestampMs();
+                // grab nodes from the discovery worker
+                Node node = DiscoveryWorker.Instance.DiscoveredNodes.FirstOrDefault(
+                                n => n.RemoteAddress == dMsg.RemoteAddress);
+                // if this node didn't announce itself, then make a new one and
+                // store it
+                if (node == null)
+                {
+                    node = new Node()
+                    {
+                        LastCheckin = naow,
+                        LastDirectoryListing = naow,
+                        Nickname = "",
+                        RemoteAddress = dMsg.RemoteAddress
+                    };
+                    DiscoveryWorker.Instance.DiscoveredNodes.Add(node);
+                }
+
+                // Read all of the directories that are available
+                
             }
         }
 
