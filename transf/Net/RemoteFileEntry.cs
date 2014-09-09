@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.IO;
 using transf.FileSystem;
 using transf.Utils;
@@ -17,8 +18,13 @@ namespace transf.Net
 
         public string HashString { get; private set; }
 
-        public RemoteFileEntry(string relativePath, string absolutePath, string hashString)
+        public Node Node { get; private set; }
+
+        public IPAddress RemoteAddress { get { return Node.RemoteAddress; } }
+
+        public RemoteFileEntry(Node node, string relativePath, string absolutePath, string hashString)
         {
+            Node = node;
             RelativePath = relativePath;
             AbsolutePath = absolutePath;
             HashString = hashString;

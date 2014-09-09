@@ -50,6 +50,7 @@ namespace transf.Net
 
         public Message(MessageType messageType, IPAddress remoteAddress, byte[] rawMessage)
         {
+            MessageType = messageType;
             RemoteAddress = remoteAddress;
             RawMessage = rawMessage;
             IsOutgoing = false;
@@ -75,7 +76,7 @@ namespace transf.Net
             offset += sizeof(ushort);
             Array.Copy(data, 0, newData, 6, data.Length);
 
-            Message message = new Message(type, remoteAddress, data);
+            Message message = new Message(type, remoteAddress, newData);
             message.IsOutgoing = true;
             return message;
         }
@@ -104,6 +105,18 @@ namespace transf.Net
             byte[] buffer = new byte[max];
             int count = Next(ref buffer, max);
             return Encoding.ASCII.GetString(buffer, 0, count);
+        }
+
+        /// <summary>
+        /// Reads the next string up until a null byte is reached.
+        /// </summary>
+        /// <returns></returns>
+        public string NextString()
+        {
+            string str = "";
+            while (RawMessage[iteratorIndex] > 0)
+                str += (char)RawMessage[iteratorIndex++];
+            return str;
         }
 
         public void Skip(int count)

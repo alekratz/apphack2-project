@@ -24,7 +24,7 @@ namespace transf.Net
         /// <summary>
         /// Gets the number of datagrams queued and available for reading
         /// </summary>
-        public int DatagramsAvailable { get { return recvQueue.Count; } }
+        public int DatagramsAvailable { get { return recvQueue.Count(msg => msg.MessageType == MessageType.Datagram); } }
 
         #region Singleton members
         private static MessageWorker instance;
@@ -63,10 +63,13 @@ namespace transf.Net
         /// <returns></returns>
         public Message NextMessage(Func<Message, bool> match)
         {
-            Message message = recvQueue.FirstOrDefault(match);
-            if(message != null)
-                recvQueue.Remove(message); // remove it from the list
-            return message;
+            lock (recvQueue)
+            {
+                Message message = recvQueue.FirstOrDefault(match);
+                if (message != null)
+                    recvQueue.Remove(message); // remove it from the list
+                return message;
+            }
         }
         #endregion
 

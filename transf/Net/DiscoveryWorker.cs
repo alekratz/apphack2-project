@@ -57,12 +57,11 @@ namespace transf.Net
 			{
 				Logger.WriteVerbose (Logger.GROUP_NET, "Emitting discovery signal");
 				// Create a broadcast packet
-				// starts with the 4-byte magic number and a nickname
-				byte[] packet = new byte[4 + nickname.Length];
-				BitConverter.GetBytes (Message.MAGIC).CopyTo (packet, 0);
-				Encoding.ASCII.GetBytes (nickname).CopyTo (packet, 4);
+                // Just a nickname
+				byte[] packet = new byte[nickname.Length];
+				Encoding.ASCII.GetBytes (nickname).CopyTo (packet, 0);
 				// Send it to the broadcast address
-                Message message = new Message(MessageType.Broadcast, IPAddress.Broadcast, packet);
+                Message message = Message.CreateOutgoingMessage(MessageType.Broadcast, IPAddress.Broadcast, Opcode.Discovery, packet);
                 MessageWorker.Instance.SendMessage(message);
 				lastBcast = TimeUtils.GetUnixTimestampMs ();
 			}
@@ -88,7 +87,7 @@ namespace transf.Net
                     continue;
                 }
 
-                message.Skip(4); // skip past the magic
+                message.Skip(6); // skip past the magic and opcode
                 string remoteNickname = message.NextString(32);
 
                 IPAddress address = message.RemoteAddress;

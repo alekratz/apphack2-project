@@ -112,8 +112,25 @@ namespace transf.FileSystem
                     DiscoveryWorker.Instance.DiscoveredNodes.Add(node);
                 }
 
+                node.DirectoryListing.Clear(); // clear it out
+
                 // Read all of the directories that are available
-                
+                // relative path, null byte, 16 bytes of hash, 8 bytes of file length
+                while (dMsg.Available > 0)
+                {
+                    string relativePath = dMsg.NextString();
+                    byte[] hash = new byte[16];
+                    dMsg.Next(ref hash, 16);
+                    byte[] sizeBytes = new byte[8];
+                    dMsg.Next(ref sizeBytes, 8);
+                    ulong size = BitConverter.ToUInt64(sizeBytes, 0);
+
+                    StringBuilder hex = new StringBuilder(hash.Length * 2);
+                    foreach (byte b in hash)
+                        hex.AppendFormat("{0:x2}", b);
+                    RemoteFileEntry entry = new RemoteFileEntry(node, relativePath, relativePath, hex.ToString());
+                    node.DirectoryListing.Add(entry);
+                }
             }
         }
 

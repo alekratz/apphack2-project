@@ -32,16 +32,18 @@ namespace transf
 		{
 			// This should be the first thing that's done
 			Logger.Instance = new Logger (Console.Out);
-			Logger.Instance.LogLevel = LogLevel.Debug; // up the verbosity
+			Logger.Instance.LogLevel = LogLevel.Verbose; // up the verbosity
             //Logger.Instance.EnabledGroups.Remove(Logger.GROUP_NET);
 
 			const int PORT = 44444;
 			string nickname = GetNickname ();
 			Logger.WriteDebug (Logger.GROUP_APP, "Using nickname {0}", nickname);
 
+            DirectoryEntry fSystem = new DirectoryEntry("../.."); // make this more neutral
             // Start a discovery worker and message worker
             MessageWorker msgWorker = MessageWorker.Instance;
             DiscoveryWorker discWorker = DiscoveryWorker.Instance;
+            DirectoryDiscoveryWorker dirDiscWorker = new DirectoryDiscoveryWorker(fSystem);
             if (!msgWorker.Start(PORT))
             {
                 Logger.WriteError(Logger.GROUP_APP, "Couldn't start message worker, exiting");
@@ -53,10 +55,15 @@ namespace transf
                 msgWorker.Stop();
                 return;
             }
-
-            DirectoryEntry fSystem = new DirectoryEntry("../.."); // make this more neutral
+            if (!dirDiscWorker.Start())
+            {
+                Logger.WriteError(Logger.GROUP_APP, "Couldn't start directory discovery worker, exiting");
+                discWorker.Stop();
+                msgWorker.Stop();
+                return;
+            }
             Console.WriteLine("Found {0} files in the filesystem", fSystem.TreeFileCount);
-			discWorker.Join ();
+            dirDiscWorker.Join();
 		}
 	}
 }
